@@ -1,0 +1,18 @@
+{
+    "name": "rapid/voyager",
+    "description": "Simple powerful file transformer",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Rapid\\Voyager\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mahdi Saremi",
+            "email": "mahdisarmi00@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
