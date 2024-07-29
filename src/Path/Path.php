@@ -10,43 +10,26 @@ abstract class Path
     public function __construct(
         public VoyagerFactory $voyager,
         public readonly string $path,
+        public readonly string $serverPath,
     )
     {
     }
 
-    public function getRealPath()
+    public function getPath() : string
     {
-        return $this->voyager->getRoot() . '/' . $this->path;
+        return $this->voyager->isClient ? $this->path : $this->serverPath;
     }
 
-    public function getContainsFiles()
+    public function getRealPath() : string
     {
-        $path = $this->getRealPath();
+        return $this->voyager->getRoot() . '/' . $this->getPath();
+    }
 
-        if (!str_contains($this->path, '**'))
-        {
-            return glob($path);
-        }
-        elseif (substr_count($this->path, '**') > 1)
-        {
-            throw new \InvalidArgumentException("Can't parse two double star ** in path [$path]");
-        }
-        else
-        {
-            $list = [];
-            [$prefix, $suffix] = explode('**', $path, 2);
-            $stars = '*';
-            while (true)
-            {
-                $new = glob("{$prefix}{$stars}{$suffix}");
+    protected FileMap $_fileMap;
 
-                if (!$new) return $list;
-
-                array_push($list, ...$new);
-
-                $stars .= '/*';
-            }
-        }
+    public function getFileMap() : FileMap
+    {
+        return $this->_fileMap ??= FileMap::fromPath($this->voyager, $this->getPath());
     }
 
 }
