@@ -18,16 +18,16 @@ class FileMap
 
     public static function fromPath(Path $source, string $path)
     {
-        $realPath = $source->voyager->getRoot() . '/' . $path;
+        $realPath = $source->voyager->getRoot($path);
         if (is_dir($realPath))
         {
             return static::from($source->voyager,
-                array_merge(static::findFilesRecursive($source, $path, $realPath), [$path])
+                array_merge(static::findFilesRecursive($source, $path, $realPath), $path == '.' ? [] : [$path])
             );
         }
         elseif (file_exists($realPath))
         {
-            return static::from($source->voyager, [$path]);
+            return static::from($source->voyager, $path == '.' ? [] : [$path]);
         }
         else
         {
@@ -43,7 +43,11 @@ class FileMap
             if ($sub == '.' || $sub == '..')
                 continue;
 
-            $path0 = $path . '/' . $sub;
+            if ($path == '.')
+                $path0 = $sub;
+            else
+                $path0 = $path . '/' . $sub;
+
             $realPath0 = $realPath . '/' . $sub;
             if ($source->containsJustSelf($path0))
             {

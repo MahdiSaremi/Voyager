@@ -94,22 +94,19 @@ use Rapid\Voyager\Voyager;
 require_once __DIR__ . '/vendor/autoload.php';
 
 # Configuration
-$voy = Voyager::factory(__FILE__, __DIR__);
+$voy = Voyager::factory(__FILE__, __DIR__, __DIR__ . '/..');
 $voy->remote("https://example.com/voy.php", 'SECURITY_KEY');
 
 # Sources
-$voy->source('app');
-$voy->source('bootstrap');
-$voy->source('config');
-$voy->source('database');
-$voy->source('public');
-$voy->source('resources');
-$voy->source('routes');
-$voy->source('storage/app'); // You should upload 'storage/' files in first time.
-$voy->source('tests');
-//$voy->source('vendor'); Vendor is too big, not recommended.
-$voy->source('.env.server', '.env'); // Different environment for server.
-$voy->source('artisan');
+$voy->sourceRoot();
+$voy->source('public', 'public_html');
+
+$voy->exclude('voy.php');
+$voy->exclude(['vendor', 'node_modules']);
+$voy->exclude(['public/hot']);
+$voy->exclude(['database/database.sql']);
+
+$voy->instead('.env', '.env.production');
 
 $voy->start();
 ```
@@ -124,22 +121,19 @@ use Rapid\Voyager\Voyager;
 require_once __DIR__ . '/vendor/autoload.php';
 
 # Configuration
-$voy = Voyager::factory(__FILE__, __DIR__);
+$voy = Voyager::factory(__FILE__, __DIR__, __DIR__ . '/../ROOT_PATH');
 $voy->remote("https://example.com/voy.php", 'SECURITY_KEY');
 
 # Sources
-$voy->source('app');
-$voy->source('bootstrap');
-$voy->source('config');
-$voy->source('database');
-$voy->source('public');
-$voy->source('resources');
-$voy->source('routes');
-$voy->source('storage/app'); // You should upload 'storage/' files in first time.
-$voy->source('tests');
-//$voy->source('vendor'); Vendor is too big, not recommended.
-$voy->source('.env.server', '.env'); // Different environment for server.
-$voy->source('artisan');
+$voy->sourceRoot();
+$voy->source('public', '../public_html');
+
+$voy->exclude('voy.php');
+$voy->exclude(['vendor', 'node_modules']);
+$voy->exclude(['public/hot']);
+$voy->exclude(['database/database.sql']);
+
+$voy->instead('.env', '.env.production');
 
 $voy->start();
 ```

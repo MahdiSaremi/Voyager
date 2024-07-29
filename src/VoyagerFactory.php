@@ -28,11 +28,12 @@ class VoyagerFactory
     /**
      * Get root path
      *
+     * @param string $path
      * @return string
      */
-    public function getRoot()
+    public function getRoot(string $path = '.')
     {
-        return $this->isClient ? $this->root : $this->serverRoot;
+        return ($this->isClient ? $this->root : $this->serverRoot) . ($path == '.' ? '' : '/' . $path);
     }
 
     /**
@@ -64,12 +65,29 @@ class VoyagerFactory
     /**
      * Add source path
      *
-     * @param string      $path
-     * @param string|null $serverPath
-     * @return SourcePath
+     * @param string|array $path
+     * @param string|null  $serverPath
+     * @return SourcePath|void
      */
-    public function source(string $path, string $serverPath = null)
+    public function source(string|array $path, string $serverPath = null)
     {
+        if (is_array($path))
+        {
+            foreach ($path as $a => $b)
+            {
+                if (is_int($a))
+                {
+                    $this->source($b);
+                }
+                else
+                {
+                    $this->source($a, $b);
+                }
+            }
+
+            return;
+        }
+
         $object = new SourcePath($this, $path, $serverPath ?? $path);
         $this->addPath($object);
 
@@ -77,17 +95,56 @@ class VoyagerFactory
     }
 
     /**
+     * Add root folder as source
+     *
+     * @return SourcePath
+     */
+    public function sourceRoot()
+    {
+        return $this->source('.');
+    }
+
+    /**
      * Add exclude path
      *
-     * @param string      $path
-     * @return ExcludePath
+     * @param string|array $path
+     * @return ExcludePath|void
      */
-    public function exclude(string $path)
+    public function exclude(string|array $path)
     {
+        if (is_array($path))
+        {
+            foreach ($path as $a)
+            {
+                $this->exclude($a);
+            }
+
+            return;
+        }
+
         $object = new ExcludePath($this, $path, $path);
         $this->addPath($object);
 
         return $object;
+    }
+
+    /**
+     * Move $sendPath to the $path (or $serverPath) in the server.
+     * And $path will not sent.
+     *
+     * Example of laravel public path:
+     *
+     * `$this->instead('public/index.php', 'public/index.server.php', '../public_html/index.php')`
+     *
+     * @param string      $path
+     * @param string      $sendPath
+     * @param string|null $serverPath
+     * @return void
+     */
+    public function instead(string $path, string $sendPath, string $serverPath = null)
+    {
+        $this->exclude($path);
+        $this->source($sendPath, $serverPath ?? $path);
     }
 
     /**
@@ -242,6 +299,14 @@ class VoyagerFactory
             {
                 return $p;
             }
+            elseif ($p->path == '.')
+            {
+                if (is_null($bestSelectionScore))
+                {
+                    $bestSelectionScore = 0;
+                    $bestSelectionResult = $p;
+                }
+            }
             elseif (str_starts_with($path, $p->path . '/') || str_starts_with($path, $p->path . '\\'))
             {
                 $score = strlen($p->path);
@@ -258,31 +323,20 @@ class VoyagerFactory
 
     public function convertToServerPath(string $path)
     {
-        $bestSelectionScore = null;
-        $bestSelectionResult = null;
-        foreach ($this->path as $p)
-        {
-            if ($p->path == $path)
-            {
-                return $p->serverPath;
-            }
-            elseif (str_starts_with($path, $p->path . '/') || str_starts_with($path, $p->path . '\\'))
-            {
-                $score = strlen($p->path);
-                if ($score > $bestSelectionScore)
-                {
-                    $bestSelectionScore = $score;
-                    $bestSelectionResult = $p->serverPath . substr($path, strlen($p->path));
-                }
-            }
-        }
+        $best = $this->resolveWhatPathIs($path);
 
-        if (isset($bestSelectionResult))
+        if ($best === null)
         {
-            return $bestSelectionResult;
+            return $path;
         }
-
-        return $path;
+        elseif ($best->path == $path)
+        {
+            return $best->serverPath;
+        }
+        else
+        {
+            return $best->serverPath . '/' . $path;
+        }
     }
 
     public function convertToServerFullPath(string $path)
