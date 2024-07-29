@@ -110,7 +110,6 @@ $voy->instead('.env', '.env.production');
 
 $voy->start();
 ```
-And create `.env.server` file.
 
 #### Laravel For Host
 ```php
