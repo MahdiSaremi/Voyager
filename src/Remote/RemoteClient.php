@@ -16,11 +16,6 @@ class RemoteClient
 
     public function update()
     {
-        // var_dump(
-        //     $this->resolveUpdates($this->makeNewSnapshot(), ['d' => [], 'f' => [], 'l' => []]),
-        // );
-        // die;
-
         echo "\nValidating connection...";
         if (!$this->request('validate'))
         {
@@ -191,7 +186,15 @@ class RemoteClient
         ];
 
         $context = stream_context_create($options);
-        $response = file_get_contents($this->voyager->server()->url, false, $context);
+
+        for ($retry = 0; $retry < 3; $retry++)
+        {
+            $response = @file_get_contents($this->voyager->server()->url, false, $context);
+
+            if ($response !== false) break;
+
+            sleep(1);
+        }
 
         if ($response === false)
         {
