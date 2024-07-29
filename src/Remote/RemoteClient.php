@@ -16,6 +16,11 @@ class RemoteClient
 
     public function update()
     {
+        // var_dump(
+        //     $this->resolveUpdates($this->makeNewSnapshot(), ['d' => [], 'f' => [], 'l' => []]),
+        // );
+        // die;
+
         echo "\nValidating connection...";
         if (!$this->request('validate'))
         {

@@ -16,40 +16,46 @@ class FileMap
     {
     }
 
-    public static function fromPath(VoyagerFactory $voyager, string $path)
+    public static function fromPath(Path $source, string $path)
     {
-        $realPath = $voyager->getRoot() . '/' . $path;
-        $prefixSize = strlen($voyager->getRoot()) + 1;
+        $realPath = $source->voyager->getRoot() . '/' . $path;
         if (is_dir($realPath))
         {
-            $list = [];
-            if (file_exists($realPath))
-            {
-                $list[] = $path;
-            }
-
-            $pattern = $realPath . "/*";
-            while (true)
-            {
-                $items = glob($pattern);
-                $pattern .= "/*";
-
-                array_push($list, ...array_map(fn ($item) => substr($item, $prefixSize), $items));
-
-                if (count($items) == 0)
-                {
-                    return static::from($voyager, $list);
-                }
-            }
+            return static::from($source->voyager,
+                array_merge(static::findFilesRecursive($source, $path, $realPath), [$path])
+            );
         }
         elseif (file_exists($realPath))
         {
-            return static::from($voyager, [$path]);
+            return static::from($source->voyager, [$path]);
         }
         else
         {
-            return static::from($voyager, []);
+            return static::from($source->voyager, []);
         }
+    }
+
+    private static function findFilesRecursive(Path $source, string $path, string $realPath)
+    {
+        $list = [];
+        foreach (scandir($realPath) as $sub)
+        {
+            if ($sub == '.' || $sub == '..')
+                continue;
+
+            $path0 = $path . '/' . $sub;
+            $realPath0 = $realPath . '/' . $sub;
+            if ($source->containsJustSelf($path0))
+            {
+                $list[] = $path0;
+                if (is_dir($realPath0))
+                {
+                    array_push($list, ...static::findFilesRecursive($source, $path0, $realPath0));
+                }
+            }
+        }
+
+        return $list;
     }
 
     public static function from(VoyagerFactory $voyager, array $list) : FileMap

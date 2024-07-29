@@ -25,11 +25,17 @@ abstract class Path
         return $this->voyager->getRoot() . '/' . $this->getPath();
     }
 
-    protected FileMap $_fileMap;
-
-    public function getFileMap() : FileMap
+    public function contains(string $path)
     {
-        return $this->_fileMap ??= FileMap::fromPath($this->voyager, $this->getPath());
+        return $path == $this->path || str_starts_with($path, $this->path . '/') || str_starts_with($path, $this->path . '\\');
     }
+
+    public function containsJustSelf(string $path)
+    {
+        return $this->voyager->resolveWhatPathIs($path) === $this;
+    }
+
+    protected FileMap $_fileMap;
+    public abstract function getFileMap() : FileMap;
 
 }

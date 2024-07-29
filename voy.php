@@ -8,6 +8,8 @@ $voy = Voyager::factory(__FILE__, __DIR__, __DIR__ . '/server');
 
 $voy->remote("http://localhost:8000/voy.php", 'My-Key');
 
-$voy->source('my_files', 'her_files');
+$voy->source('my_files', 'his_files');
+$voy->exclude('my_files/excluded');
+$voy->source('my_files/moved', 'her_file');
 
 $voy->start();

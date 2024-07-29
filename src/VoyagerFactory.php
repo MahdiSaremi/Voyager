@@ -3,6 +3,7 @@
 namespace Rapid\Voyager;
 
 use Rapid\Voyager\Command\ShellCommand;
+use Rapid\Voyager\Path\ExcludePath;
 use Rapid\Voyager\Path\Path;
 use Rapid\Voyager\Path\SourcePath;
 
@@ -70,6 +71,20 @@ class VoyagerFactory
     public function source(string $path, string $serverPath = null)
     {
         $object = new SourcePath($this, $path, $serverPath ?? $path);
+        $this->addPath($object);
+
+        return $object;
+    }
+
+    /**
+     * Add exclude path
+     *
+     * @param string      $path
+     * @return ExcludePath
+     */
+    public function exclude(string $path)
+    {
+        $object = new ExcludePath($this, $path, $path);
         $this->addPath($object);
 
         return $object;
@@ -217,8 +232,34 @@ class VoyagerFactory
         }
     }
 
+    public function resolveWhatPathIs(string $path) : ?Path
+    {
+        $bestSelectionScore = null;
+        $bestSelectionResult = null;
+        foreach ($this->path as $p)
+        {
+            if ($p->path == $path)
+            {
+                return $p;
+            }
+            elseif (str_starts_with($path, $p->path . '/') || str_starts_with($path, $p->path . '\\'))
+            {
+                $score = strlen($p->path);
+                if ($score > $bestSelectionScore)
+                {
+                    $bestSelectionScore = $score;
+                    $bestSelectionResult = $p;
+                }
+            }
+        }
+
+        return $bestSelectionResult;
+    }
+
     public function convertToServerPath(string $path)
     {
+        $bestSelectionScore = null;
+        $bestSelectionResult = null;
         foreach ($this->path as $p)
         {
             if ($p->path == $path)
@@ -227,8 +268,18 @@ class VoyagerFactory
             }
             elseif (str_starts_with($path, $p->path . '/') || str_starts_with($path, $p->path . '\\'))
             {
-                return $p->serverPath . substr($path, strlen($p->path));
+                $score = strlen($p->path);
+                if ($score > $bestSelectionScore)
+                {
+                    $bestSelectionScore = $score;
+                    $bestSelectionResult = $p->serverPath . substr($path, strlen($p->path));
+                }
             }
+        }
+
+        if (isset($bestSelectionResult))
+        {
+            return $bestSelectionResult;
         }
 
         return $path;
